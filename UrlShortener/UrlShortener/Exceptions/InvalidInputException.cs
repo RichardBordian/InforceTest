@@ -1,3 +1,3 @@
 namespace UrlShortener.Exceptions;
 
-public class InvalidInputException() : Exception("The input provided is invalid.");
+public class InvalidInputException(string message = "The input provided is invalid.") : Exception(message);

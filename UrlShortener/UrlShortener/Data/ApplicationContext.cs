@@ -10,7 +10,7 @@ public sealed class ApplicationContext : IdentityDbContext<User, IdentityRole<in
     public ApplicationContext(DbContextOptions<ApplicationContext> options)
         : base(options)
     {
-        Database.EnsureCreated();
     }
+    
     public DbSet<Url> Urls { get; set; }
 }

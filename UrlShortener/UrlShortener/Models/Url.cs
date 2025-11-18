@@ -6,4 +6,6 @@ public class Url
     public string FullUrl { get; set; }
     public string ShortUrl { get; set; }
     public int UserId { get; set; }
+    public User User { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 }

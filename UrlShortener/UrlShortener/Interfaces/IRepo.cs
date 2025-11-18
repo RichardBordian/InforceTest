@@ -8,5 +8,9 @@ public interface IRepo<T>
     
     public Task<T> GetByIdAsync(int id);
     
-    public Task<List<T>> GetByUserIdAsync(string userId);
+    public Task<List<T>> GetByUserIdAsync(int userId);
+
+    public Task<List<T>> GetAllAsync();
+    
+    public Task DeleteAsync(T entity);
 }
