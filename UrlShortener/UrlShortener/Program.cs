@@ -1,3 +1,17 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using UrlShortener.Data;
+using UrlShortener.Interfaces.IRepos;
+using UrlShortener.Interfaces.IServices;
+using UrlShortener.Models;
+using UrlShortener.Options;
+using UrlShortener.Repos;
+using UrlShortener.Services;
+
 namespace UrlShortener;
 
 public class Program
@@ -6,22 +20,56 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-        builder.Services.AddControllersWithViews();
+        builder.Configuration.AddJsonFile("appsettings.json", false, true);
 
+        builder.Services.AddDbContext<ApplicationContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("Database")));
+        
+        builder.Services.AddIdentity<User, IdentityRole<int>>()
+            .AddEntityFrameworkStores<ApplicationContext>();
+        
+        builder.Services.AddScoped<IRepo<Url>, UrlRepo>();
+        builder.Services.AddScoped<IJwtService, JwtService>();
+        builder.Services.AddScoped<IUserServices, UserServices>();
+        builder.Services.AddScoped<IUrlServices, UrlServices>();
+        builder.Services.AddControllersWithViews();
+        
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(o =>
+        {
+            o.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtOptions:Key"])),
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true
+            };
+        });
+
+        builder.Services.AddAuthorization();
+        
+        builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
+        
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Home/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
 
         app.UseHttpsRedirection();
         app.UseRouting();
-
+        
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapStaticAssets();
